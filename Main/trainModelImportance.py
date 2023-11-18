@@ -2,11 +2,14 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
+from sklearn.impute import SimpleImputer
 import joblib
 
-# Ваши маппинги
+# Чтение CSV-файла
+df = pd.read_csv('C:/Users/egork/dev/humhack/dataFromImportance.csv')
+
 category_mapping = {
-     'change_order': 0,
+    'change_order': 0,
     'delete_account': 1,
     'get_invoice': 2,
     'track_order': 3,
@@ -35,28 +38,22 @@ category_mapping = {
     'place_order': 26,
     'cancel_order': 27
 }
-
-importance_mapping = {
-    'high_priority': 0,
-    'standard_priority': 1,
-    'medium_priority': 2
-}
-
-# Чтение CSV-файла
-df = pd.read_csv('C:/Users/egork/dev/humhack/dataFromImportance.csv')
-
 # Преобразование категорий в числовые значения
 df['request'] = df['request'].map(category_mapping)
 
+# Обработка пропущенных значений
+imputer = SimpleImputer(strategy='most_frequent')  # Используйте 'most_frequent' или 'constant'
+df['request'] = imputer.fit_transform(df[['request']])
+
 # Разделение данных на обучающий и тестовый наборы
-X_train, X_test, y_train, y_test = train_test_split(df['request'], df['importance'], test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(df[['request']], df['importance'], test_size=0.2, random_state=42)
 
 # Инициализация и обучение модели
 model = SVC(kernel='linear', C=1.0, random_state=42)
-model.fit(X_train.values.reshape(-1, 1), y_train)
+model.fit(X_train, y_train)
 
 # Прогнозирование на тестовом наборе
-y_pred = model.predict(X_test.values.reshape(-1, 1))
+y_pred = model.predict(X_test)
 
 # Оценка точности модели
 accuracy = accuracy_score(y_test, y_pred)
